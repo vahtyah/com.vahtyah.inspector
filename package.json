@@ -1,0 +1,19 @@
+{
+  "name": "com.vahtyah.inspector",
+  "displayName": "VahTyah Inspector",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "Custom inspector attributes and drawers for Unity.",
+  "author": {
+    "name": "Tuan Van",
+    "url": "https://github.com/vahtyah"
+  },
+  "dependencies": {
+    "com.vahtyah.core": "1.0.0"
+  },
+  "keywords": [
+    "inspector",
+    "attributes",
+    "editor"
+  ]
+}
