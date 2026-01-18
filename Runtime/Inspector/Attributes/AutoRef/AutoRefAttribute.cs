@@ -1,6 +1,6 @@
 using System;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     /// <summary>
     /// Automatically get/find component references

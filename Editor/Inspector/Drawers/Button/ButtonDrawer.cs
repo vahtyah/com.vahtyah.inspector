@@ -5,9 +5,10 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using VahTyah.Core;
 using Object = UnityEngine.Object;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public class ButtonDrawer
     {

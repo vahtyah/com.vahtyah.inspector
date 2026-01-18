@@ -1,6 +1,7 @@
 using UnityEditor;
+using VahTyah.Core;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [InitializeOnLoad]
     public static class InspectorStyle

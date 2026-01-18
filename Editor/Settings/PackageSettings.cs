@@ -2,16 +2,19 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using UnityEditor.Compilation;
+using VahTyah.Core;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public static class PackageSettings
     {
+        private const string MENU_ROOT = "Tools/VahTyah/Inspector/";
+
         public const string DEFINE_SYMBOL = "VAHTYAH_CUSTOM_INSPECTOR";
         private const string EDITOR_STYLE_PATH = "Assets/Editor/EditorStyle";
         private const string ASSET_NAME = "EditorStyleDatabase.asset";
 
-        [MenuItem("Tools/VahTyah/Styles/Inspector Style", false, 1)]
+        [MenuItem(MENU_ROOT + "Style", false, 1)]
         public static void CreateEditorStyleDatabase()
         {
             if (!Directory.Exists(EDITOR_STYLE_PATH))
@@ -38,7 +41,28 @@ namespace VahTyah
             EditorGUIUtility.PingObject(database);
         }
 
-        private const string MENU_PATH = "Tools/VahTyah/Disable";
+        private const string MENU_PATH = MENU_ROOT + "Disable";
+        private const string PLAYMODE_SAVE_MENU_PATH = MENU_ROOT + "Disable Play Mode Save";
+        private const string PLAYMODE_SAVE_PREF_KEY = "VahTyah_PlayModeSave_Enabled";
+
+        public static bool IsPlayModeSaveEnabled
+        {
+            get => EditorPrefs.GetBool(PLAYMODE_SAVE_PREF_KEY, false);
+            set => EditorPrefs.SetBool(PLAYMODE_SAVE_PREF_KEY, value);
+        }
+
+        [MenuItem(PLAYMODE_SAVE_MENU_PATH, false, 50)]
+        public static void TogglePlayModeSave()
+        {
+            IsPlayModeSaveEnabled = !IsPlayModeSaveEnabled;
+        }
+
+        [MenuItem(PLAYMODE_SAVE_MENU_PATH, true)]
+        public static bool ValidateTogglePlayModeSave()
+        {
+            Menu.SetChecked(PLAYMODE_SAVE_MENU_PATH, !IsPlayModeSaveEnabled);
+            return true;
+        }
 
         [MenuItem(MENU_PATH, false, 100)]
         public static void ToggleCustomDrawers()
@@ -51,6 +75,7 @@ namespace VahTyah
             {
                 AddDefineSymbol(DEFINE_SYMBOL);
             }
+
             CompilationPipeline.RequestScriptCompilation();
         }
 

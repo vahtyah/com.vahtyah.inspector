@@ -1,7 +1,8 @@
 using UnityEditor;
 using UnityEngine;
+using VahTyah.Core;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public class BoxGroupDrawer : IGroupDrawer
     {

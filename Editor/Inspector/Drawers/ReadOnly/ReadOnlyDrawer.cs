@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public class ReadOnlyDrawer
     {

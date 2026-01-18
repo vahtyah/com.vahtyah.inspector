@@ -2,7 +2,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public class RequiredDrawer
     {

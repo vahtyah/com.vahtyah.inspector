@@ -1,6 +1,6 @@
 using System;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public abstract class GroupAttribute : Attribute

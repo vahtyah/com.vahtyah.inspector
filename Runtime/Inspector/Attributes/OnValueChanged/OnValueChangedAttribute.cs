@@ -1,6 +1,6 @@
 using System;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     /// <summary>
     /// Invokes a method when the field value changes in the Inspector

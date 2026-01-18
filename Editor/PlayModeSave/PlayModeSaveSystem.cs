@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [FilePath("VahTyah/PlayModeSaveSystem.asset", FilePathAttribute.Location.PreferencesFolder)]
     public class PlayModeSaveSystem : ScriptableSingleton<PlayModeSaveSystem>

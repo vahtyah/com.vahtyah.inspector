@@ -1,4 +1,4 @@
-﻿namespace VahTyah
+﻿namespace VahTyah.Inspector
 {
     public class BoxGroupAttribute : GroupAttribute
     {

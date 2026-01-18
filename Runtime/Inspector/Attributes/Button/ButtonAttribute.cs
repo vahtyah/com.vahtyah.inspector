@@ -1,6 +1,6 @@
 using System;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     /// <summary>
     /// Attribute to display a button in the inspector that calls a method

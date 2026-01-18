@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEditor;
 using Object = UnityEngine.Object;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     public class OnValueChangedHandler
     {

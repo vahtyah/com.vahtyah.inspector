@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using Object = UnityEngine.Object;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     /// <summary>
     /// Interface for drawing grouped properties

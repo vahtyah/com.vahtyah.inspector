@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(MonoBehaviour), true)]

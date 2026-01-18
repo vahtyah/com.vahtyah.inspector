@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [InitializeOnLoad]
     public static class PackageInstallProcessor

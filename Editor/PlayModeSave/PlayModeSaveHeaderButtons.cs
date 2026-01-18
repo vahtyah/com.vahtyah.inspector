@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     [InitializeOnLoad]
     public static class PlayModeSaveHeaderButtons
@@ -43,8 +43,11 @@ namespace VahTyah
 
         private static Delegate playmodeSaveButton;
 
-        private static bool DrawPlayModeSaveButton(Rect buttonRect, Object[] targets)
+private static bool DrawPlayModeSaveButton(Rect buttonRect, Object[] targets)
         {
+            // Check if feature is enabled
+            if (!PackageSettings.IsPlayModeSaveEnabled) return false;
+            
             // Only show in play mode
             if (!Application.isPlaying) return false;
             

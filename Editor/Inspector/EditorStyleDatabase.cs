@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+using VahTyah.Core;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     // [CreateAssetMenu(fileName = "EditorStyles", menuName = "CustomEditor/EditorStyles", order = 1)]
     public class EditorStyleDatabase : ScriptableObject

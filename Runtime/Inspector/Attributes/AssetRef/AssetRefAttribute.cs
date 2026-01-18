@@ -1,6 +1,6 @@
 using System;
 
-namespace VahTyah
+namespace VahTyah.Inspector
 {
     /// <summary>
     /// Automatically find and assign asset references from the project
