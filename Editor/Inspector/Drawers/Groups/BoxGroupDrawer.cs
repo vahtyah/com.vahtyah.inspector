@@ -13,7 +13,7 @@ namespace VahTyah.Inspector
             if (groupStyles == null)
             {
                 groupStyles = InspectorStyle.GetStyle()?.groupStyles
-                    ?? InspectorStyleData.GroupStyles.CreateDefaultStyles();
+                    ?? InspectorStyleData.GroupStyles.CreateDefaultStyles(EditorGUIUtility.isProSkin);
             }
         }
 

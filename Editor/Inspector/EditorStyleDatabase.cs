@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using VahTyah.Core;
 
@@ -14,35 +15,43 @@ namespace VahTyah.Inspector
         [Button]
         public void AddDefaultStyle()
         {
-            InspectorStyleData defaultStyleData = new InspectorStyleData
-            {
-                groupStyles = InspectorStyleData.GroupStyles.CreateDefaultStyles(),
-                buttonStyles = InspectorStyleData.ButtonStyles.CreateDefaultStyles()
-            };
-            styles.Add(defaultStyleData);
+            styles.Add(GetDefaultDarkStyle());
+            styles.Add(GetDefaultLightStyle());
         }
 
         public InspectorStyleData GetStyle()
         {
-            if (styles.Count == 0)
+            if (styles.Count < 2)
             {
+                styles.Clear();
                 AddDefaultStyle();
             }
 
-            if (defaultStyleIndex < 0 || defaultStyleIndex >= styles.Count)
-            {
-                defaultStyleIndex = 0;
-            }
-
-            return styles[defaultStyleIndex];
+            var isDarkMode = EditorGUIUtility.isProSkin;
+            return isDarkMode ? styles[0] : styles[1];
         }
 
         public static InspectorStyleData GetDefaultStyle()
         {
+            return UnityEditor.EditorGUIUtility.isProSkin ? GetDefaultDarkStyle() : GetDefaultLightStyle();
+        }
+
+        public static InspectorStyleData GetDefaultDarkStyle()
+        {
             InspectorStyleData defaultStyleData = new InspectorStyleData
             {
-                groupStyles = InspectorStyleData.GroupStyles.CreateDefaultStyles(),
-                buttonStyles = InspectorStyleData.ButtonStyles.CreateDefaultStyles()
+                groupStyles = InspectorStyleData.GroupStyles.CreateDefaultStyles(true),
+                buttonStyles = InspectorStyleData.ButtonStyles.CreateDefaultStyles(true)
+            };
+            return defaultStyleData;
+        }
+
+        public static InspectorStyleData GetDefaultLightStyle()
+        {
+            InspectorStyleData defaultStyleData = new InspectorStyleData
+            {
+                groupStyles = InspectorStyleData.GroupStyles.CreateDefaultStyles(false),
+                buttonStyles = InspectorStyleData.ButtonStyles.CreateDefaultStyles(false)
             };
             return defaultStyleData;
         }
@@ -65,7 +74,7 @@ namespace VahTyah.Inspector
             public LayerConfiguration headerConfig;
             public GUIStyle labelStyle;
 
-            public static GroupStyles CreateDefaultStyles()
+            public static GroupStyles CreateDefaultStyles(bool isDarkMode)
             {
                 GroupStyles styles = new GroupStyles
                 {
@@ -73,9 +82,9 @@ namespace VahTyah.Inspector
                     headerPadding = new Padding(8f, 0f, 0f, 0f),
                     contentPadding = new Padding(8f, 8f, 8f, 8f),
                     groupSpacing = 6f,
-                    headerConfig = CreateDarkHeaderStyle(),
-                    backgroundConfig = CreateDarkBackgroundStyle(),
-                    labelStyle = CreateLabelStyle()
+                    headerConfig = isDarkMode ? CreateDarkHeaderStyle() : CreateLightHeaderStyle(),
+                    backgroundConfig = isDarkMode ? CreateDarkBackgroundStyle() : CreateLightBackgroundStyle(),
+                    labelStyle = CreateLabelStyle(isDarkMode)
                 };
                 return styles;
             }
@@ -89,6 +98,15 @@ namespace VahTyah.Inspector
                 return config;
             }
 
+            private static LayerConfiguration CreateLightHeaderStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(3);
+                config.layers[0] = Layer.CreateRoundedRect(new Color(1f, 1f, 1f, 0.3f), 4f, new Padding(0, 1, 1, 0));
+                config.layers[1] = Layer.CreateRoundedRect(new Color(1f, 1f, 1f, 0.3f), 4f);
+                config.layers[2] = Layer.CreateBorder(new Color(0.6f, 0.6f, 0.6f, 1f), 1f, 4f);
+                return config;
+            }
+
             private static LayerConfiguration CreateDarkBackgroundStyle()
             {
                 LayerConfiguration config = new LayerConfiguration(3);
@@ -99,13 +117,25 @@ namespace VahTyah.Inspector
                 return config;
             }
 
-            private static GUIStyle CreateLabelStyle()
+            private static LayerConfiguration CreateLightBackgroundStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(3);
+                config.layers[0] =
+                    Layer.CreateRoundedRect(new Color(0.85f, 0.85f, 0.85f, 1f), 4f, new Padding(0, 1, 1, 0));
+                config.layers[1] = Layer.CreateRoundedRect(new Color(0.78f, 0.78f, 0.78f, 1f), 4f);
+                config.layers[2] = Layer.CreateBorder(new Color(0.6f, 0.6f, 0.6f, 1f), 1f, 4f);
+                return config;
+            }
+
+            private static GUIStyle CreateLabelStyle(bool isDarkMode)
             {
                 GUIStyle labelStyle = new GUIStyle(); // Create from scratch
                 labelStyle.fontSize = 12;
                 labelStyle.fontStyle = FontStyle.Bold;
                 labelStyle.alignment = TextAnchor.MiddleLeft;
-                labelStyle.normal.textColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+                labelStyle.normal.textColor = isDarkMode 
+                    ? new Color(0.85f, 0.85f, 0.85f, 1f)
+                    : new Color(0.15f, 0.15f, 0.15f, 1f);
                 labelStyle.padding = new RectOffset(0, 0, 0, 0);
                 return labelStyle;
             }
@@ -123,23 +153,23 @@ namespace VahTyah.Inspector
             public LayerConfiguration activeConfig;
             public GUIStyle labelStyle;
 
-            public static ButtonStyles CreateDefaultStyles()
+            public static ButtonStyles CreateDefaultStyles(bool isDarkMode)
             {
                 ButtonStyles styles = new ButtonStyles
                 {
                     buttonHeight = 30f,
                     buttonSpacing = 5f,
                     buttonPadding = new Padding(12f, 8f, 12f, 8f),
-                    backgroundConfig = CreateBackgroundStyle(),
-                    normalConfig = CreateButtonNormalStyle(),
-                    hoverConfig = CreateButtonHoverStyle(),
-                    activeConfig = CreateButtonActiveStyle(),
-                    labelStyle = CreateButtonLabelStyle()
+                    backgroundConfig = isDarkMode ? CreateDarkBackgroundStyle() : CreateLightBackgroundStyle(),
+                    normalConfig = isDarkMode ? CreateButtonNormalDarkStyle() : CreateButtonNormalLightStyle(),
+                    hoverConfig = isDarkMode ? CreateButtonHoverDarkStyle() : CreateButtonHoverLightStyle(),
+                    activeConfig = isDarkMode ? CreateButtonActiveDarkStyle() : CreateButtonActiveLightStyle(),
+                    labelStyle = CreateButtonLabelStyle(isDarkMode)
                 };
                 return styles;
             }
 
-            private static LayerConfiguration CreateBackgroundStyle()
+            private static LayerConfiguration CreateDarkBackgroundStyle()
             {
                 LayerConfiguration config = new LayerConfiguration(2);
                 config.layers[0] = Layer.CreateRoundedRect(new Color(0.22f, 0.22f, 0.22f, 1f), 4f);
@@ -147,7 +177,15 @@ namespace VahTyah.Inspector
                 return config;
             }
 
-            private static LayerConfiguration CreateButtonNormalStyle()
+            private static LayerConfiguration CreateLightBackgroundStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(2);
+                config.layers[0] = Layer.CreateRoundedRect(new Color(0.78f, 0.78f, 0.78f, 1f), 4f);
+                config.layers[1] = Layer.CreateBorder(new Color(0.6f, 0.6f, 0.6f, 1f), 1f, 4f);
+                return config;
+            }
+
+            private static LayerConfiguration CreateButtonNormalDarkStyle()
             {
                 LayerConfiguration config = new LayerConfiguration(3);
                 config.layers[0] =
@@ -157,7 +195,17 @@ namespace VahTyah.Inspector
                 return config;
             }
 
-            private static LayerConfiguration CreateButtonHoverStyle()
+            private static LayerConfiguration CreateButtonNormalLightStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(3);
+                config.layers[0] =
+                    Layer.CreateRoundedRect(new Color(1f, 1f, 1f, 0.3f), 4f, new Padding(0, 1, 1, 0));
+                config.layers[1] = Layer.CreateRoundedRect(new Color(1f, 1f, 1f, 0.3f), 4f);
+                config.layers[2] = Layer.CreateBorder(new Color(0.6f, 0.6f, 0.6f, 1f), 1f, 4f);
+                return config;
+            }
+
+            private static LayerConfiguration CreateButtonHoverDarkStyle()
             {
                 LayerConfiguration config = new LayerConfiguration(3);
                 config.layers[0] =
@@ -167,7 +215,17 @@ namespace VahTyah.Inspector
                 return config;
             }
 
-            private static LayerConfiguration CreateButtonActiveStyle()
+            private static LayerConfiguration CreateButtonHoverLightStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(3);
+                config.layers[0] =
+                    Layer.CreateRoundedRect(new Color(0.8f, 0.8f, 0.8f, 1f), 4f, new Padding(0, 1, 1, 0));
+                config.layers[1] = Layer.CreateRoundedRect(new Color(0.7f, 0.7f, 0.7f, 1f), 4f);
+                config.layers[2] = Layer.CreateBorder(new Color(0.5f, 0.5f, 0.5f, 1f), 1f, 4f);
+                return config;
+            }
+
+            private static LayerConfiguration CreateButtonActiveDarkStyle()
             {
                 LayerConfiguration config = new LayerConfiguration(3);
                 config.layers[0] =
@@ -177,13 +235,25 @@ namespace VahTyah.Inspector
                 return config;
             }
 
-            private static GUIStyle CreateButtonLabelStyle()
+            private static LayerConfiguration CreateButtonActiveLightStyle()
+            {
+                LayerConfiguration config = new LayerConfiguration(3);
+                config.layers[0] =
+                    Layer.CreateRoundedRect(new Color(0.9f, 0.9f, 0.9f, 1f), 4f, new Padding(0, 1, 1, 0));
+                config.layers[1] = Layer.CreateRoundedRect(new Color(0.4f, 0.6f, 0.8f, 1f), 4f);
+                config.layers[2] = Layer.CreateBorder(new Color(0.3f, 0.5f, 0.7f, 1f), 1f, 4f);
+                return config;
+            }
+
+            private static GUIStyle CreateButtonLabelStyle(bool isDarkMode)
             {
                 GUIStyle labelStyle = new GUIStyle(); // Create from scratch
                 labelStyle.fontSize = 12;
                 labelStyle.fontStyle = FontStyle.Bold;
                 labelStyle.alignment = TextAnchor.MiddleCenter;
-                labelStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                labelStyle.normal.textColor = isDarkMode
+                    ? new Color(0.9f, 0.9f, 0.9f, 1f)
+                    : new Color(0.1f, 0.1f, 0.1f, 1f);
                 labelStyle.padding = new RectOffset(0, 0, 0, 0);
                 labelStyle.margin = new RectOffset(0, 0, 0, 0);
                 labelStyle.contentOffset = Vector2.zero;
