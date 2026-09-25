@@ -159,6 +159,17 @@ public int Order { get; }
 - `Label` — Button label; falls back to the method name when empty.
 - `Order` — Display order among buttons (lower values appear first).
 
+#### class `CustomInspector`
+
+*: Editor*  
+Base custom Editor that renders fields with grouping, ShowIf, required/readonly/auto-ref/asset-ref controls, OnValueChanged callbacks, and Button methods.  
+
+```csharp
+public CustomInspector();
+protected virtual void OnEnable();
+public virtual void OnInspectorGUI();
+```
+
 #### abstract class `DeferredEditor`
 
 *: Editor*  
@@ -184,40 +195,6 @@ public static void Draw(Rect rect, bool isError, string tooltip, GUIStyle style)
 ```
 
 - `Draw` — Vẽ icon warn/error trong rect kèm tooltip. style do consumer truyền (Juice: label MiddleCenter; Module: GUI.skin.label mặc định) để giữ đúng pixel của mỗi bên.
-
-#### class `EditorStyleDatabase`
-
-*: ScriptableObject*  
-
-```csharp
-public EditorStyleDatabase();
-public int CustomStyleCount { get; }
-public int CustomStyleIndex { get; set; }
-public InspectorThemeMode ThemeMode { get; set; }
-public void AddDefaultStyle();
-public static InspectorStyleData GetDefaultDarkStyle();
-public static InspectorStyleData GetDefaultLightStyle();
-public static InspectorStyleData GetDefaultStyle();
-public InspectorStyleData GetStyle();
-```
-
-- `CustomStyleCount` — Số lượng custom style hiện có trong danh sách.
-- `ThemeMode` — Theme đang chọn cho asset này; lưu LOCAL bằng EditorPrefs theo GUID.
-- `CustomStyleIndex` — Index custom style đang chọn khi ThemeMode == Custom; lưu bằng EditorPrefs.
-- `AddDefaultStyle` — Thêm hai style mặc định (dark và light) vào danh sách custom.
-- `GetDefaultStyle` — Style mặc định theo skin Editor hiện tại (dark khi pro-skin, ngược lại light).
-- `GetDefaultDarkStyle` — Tạo style mặc định cho theme tối.
-- `GetDefaultLightStyle` — Tạo style mặc định cho theme sáng.
-
-#### class `EditorStyleDatabaseEditor`
-
-*: Editor*  
-Inspector cho EditorStyleDatabase với UI chọn theme và quản lý custom style.  
-
-```csharp
-public EditorStyleDatabaseEditor();
-public virtual void OnInspectorGUI();
-```
 
 #### abstract class `GroupAttribute`
 
@@ -270,18 +247,17 @@ public Rect Remaining(Rect header, float leftPad, float gapBefore = 0);
 
 #### static class `InspectorStyle`
 
-Điểm truy cập tĩnh tới InspectorStyleData hiện hành mà các drawer đọc để vẽ.  
+Điểm truy cập tĩnh tới InspectorStyleData hiện hành mà các drawer đọc để vẽ. Nguồn style là InspectorTheme (lưu local trong UserSettings/), không còn asset nào.  
 
 ```csharp
 public static void EnsureStyleDatabaseExists();
 public static InspectorStyleData GetStyle();
 public static void Refresh();
-public static void SetStyleDatabase(EditorStyleDatabase database);
 ```
 
-- `EnsureStyleDatabaseExists` — Nạp database + style hiện hành nếu chưa có; fallback về style mặc định.
+- `EnsureStyleDatabaseExists` — Nạp style hiện hành nếu chưa có.
 - `GetStyle` — Trả về InspectorStyleData đang dùng để vẽ inspector.
-- `SetStyleDatabase` — Đặt database style dùng làm nguồn và nạp lại style hiện hành từ nó.
+- `Refresh` — Đọc lại style hiện hành (vd. sau khi đổi theme); drawer sẽ cập nhật ở repaint kế.
 
 #### class `InspectorStyleData`
 
@@ -291,7 +267,12 @@ Toàn bộ style dùng để vẽ inspector tuỳ biến: style cho group và ch
 public InspectorStyleData();
 public InspectorStyleData.ButtonStyles buttonStyles;
 public InspectorStyleData.GroupStyles groupStyles;
+public static InspectorStyleData CreateDefault(bool isDarkMode);
+public static InspectorStyleData CreateForSkin();
 ```
+
+- `CreateDefault` — Bộ style dựng sẵn cho theme tối hoặc sáng.
+- `CreateForSkin` — Bộ style dựng sẵn khớp skin Editor hiện tại (pro-skin = dark).
 
 #### class `InspectorStyleData.ButtonStyles`
 
@@ -330,17 +311,13 @@ public static InspectorStyleData.GroupStyles CreateDefaultStyles(bool isDarkMode
 
 - `CreateDefaultStyles` — Tạo bộ group style mặc định cho theme tối hoặc sáng.
 
-#### enum `InspectorThemeMode`
+#### class `MonoBehaviorInspector`
 
+*: CustomInspector*  
+Applies CustomInspector to every MonoBehaviour so its attributes render.  
 
 ```csharp
-enum InspectorThemeMode : int
-{
-    Light = 0,
-    Dark = 1,
-    System = 2,
-    Custom = 3,
-}
+public MonoBehaviorInspector();
 ```
 
 #### class `OnValueChangedAttribute`
@@ -427,6 +404,15 @@ public string Message { get; }
 
 - `Message` — Custom message shown when the field is unassigned; a default is used when null.
 - `IsError` — Whether the notice is shown as an error rather than a warning.
+
+#### class `ScriptableObjectInspector`
+
+*: CustomInspector*  
+Applies CustomInspector to every ScriptableObject so its attributes render.  
+
+```csharp
+public ScriptableObjectInspector();
+```
 
 #### sealed class `ShowIfAttribute`
 
