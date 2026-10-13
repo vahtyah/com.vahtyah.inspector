@@ -38,6 +38,24 @@ public class Turret : MonoBehaviour
 public enum FireMode { Single, Burst }
 ```
 
+### Tabs (`[TabGroup]`)
+
+```csharp
+public class Weapon : MonoBehaviour
+{
+    [TabGroup("Weapon", "Stats")] public float damage = 10f;
+    [TabGroup("Weapon", "Stats")] public float range = 25f;
+    [TabGroup("Weapon", "Audio")] public AudioClip fireSfx;   // same id → same box, another tab
+    [TabGroup("Weapon", "Visual")] public ParticleSystem muzzleFx;
+}
+```
+
+Fields sharing an id form one box; each tab shows only its fields, and the selected tab is remembered
+per type for the editor session. Custom editors and EditorWindows can draw the same tab box with
+`TabGUI.BeginTabBox(tabs, selected)` / `TabGUI.EndTabBox()` (equal-width tabs), or
+`TabGUI.BeginTabBox(tabs, selected, out var toolbar, fillWidth: false, maxTabWidth: 140f)` for tabs sized
+to their label, left-aligned, with `toolbar` being the free space on the right of the tab row for buttons.
+
 `[ShowIf]` reads a bool member (`[ShowIf("member")]`) or compares any member to a value
 (`[ShowIf("member", value)]`, supports enum/int/string/bool). The member may be a field, property,
 or no-arg method on the target, including private and inherited ones. `[Required(message, isError)]`
@@ -159,6 +177,37 @@ public int Order { get; }
 - `Label` — Button label; falls back to the method name when empty.
 - `Order` — Display order among buttons (lower values appear first).
 
+#### static class `ButtonGUI`
+
+Helper vẽ nút theo InspectorStyleData.ButtonStyles hiện hành — cùng kiểu nút [Button] trong Inspector — cho custom editor / EditorWindow tiêu thụ package. Style đọc live nên đổi theme có hiệu lực ngay. Hỗ trợ tone (Accent / Danger) và phần 3D (đáy, vệt sáng, lún khi nhấn) theo ButtonStyles. Ngoài #if VAHTYAH_CUSTOM_INSPECTOR.  
+
+```csharp
+public static float Height { get; }
+public static InspectorStyleData.ButtonStyles Styles { get; }
+public static bool Button(GUIContent content, ButtonTone tone = ButtonTone.Normal);
+public static bool Button(Rect rect, GUIContent content, ButtonTone tone = ButtonTone.Normal);
+public static bool Button(Rect rect, GUIContent content, ButtonTone tone, GUIStyle labelStyle);
+public static void Spacing();
+```
+
+- `Styles` — Button style đang dùng, fallback style mặc định theo skin khi chưa có theme.
+- `Height` — Chiều cao layout của một nút: buttonHeight cộng phần dọc của đáy 3D.
+- `Button` — Nút layout giãn hết chiều ngang (chia đều khi đặt nhiều nút trong một hàng ngang). Trả true khi thả chuột trái trên nút.
+- `Spacing` — Khoảng cách dọc giữa các hàng nút theo buttonSpacing của style.
+
+#### enum `ButtonTone`
+
+Tông màu của nút vẽ bằng ButtonGUI.  
+
+```csharp
+enum ButtonTone : int
+{
+    Normal = 0,
+    Accent = 1,
+    Danger = 2,
+}
+```
+
 #### class `CustomInspector`
 
 *: Editor*  
@@ -222,7 +271,7 @@ public static void DrawGroupBackdrop(Rect box, Rect header, InspectorStyleData.G
 public static bool DrawHeader(Rect box, Rect header, InspectorStyleData.GroupStyles g, float labelPad, string title, bool open, GUIStyle titleStyle);
 ```
 
-- `DrawGroupBackdrop` — Nền box + header band. DrawLayers tự no-op ngoài Repaint nên gọi vô điều kiện.
+- `DrawGroupBackdrop` — Nền box + header band, kèm viền header và các phần 3D (đáy box, đáy / vệt sáng header) theo GroupStyles. Chỉ vẽ ở Repaint nên gọi vô điều kiện. Box đang thu gọn (chỉ còn header) thì không vẽ đáy header.
 - `DrawFoldout` — Nút vô hình phủ clickRegion + arrow ▾/▸ + label. Trả về open mới (caller lo persist, ví dụ SessionState). Dùng cho group có widget bên phải header (clickRegion chỉ phủ nửa trái). labelPad là lề trái của label — do consumer truyền (Juice: headerPadding.left + 4f; Module: headerPadding.left).
 - `DrawHeader` — Backdrop + foldout phủ TRỌN header — cho group không có widget bên phải.
 
@@ -280,17 +329,45 @@ Kích thước, padding, layer config cho các trạng thái (normal/hover/activ
 
 ```csharp
 public ButtonStyles();
+public static readonly Color DefaultAccent;
+public static readonly Color DefaultDanger;
+public Color accentColor;
+public float accentFaceMix;
+public float accentRing;
 public LayerConfiguration activeConfig;
 public LayerConfiguration backgroundConfig;
 public float buttonHeight;
 public Padding buttonPadding;
 public float buttonSpacing;
+public Color dangerColor;
+public float dangerFaceMix;
+public float depth;
+public float depthDarken;
+public Vector2 depthDirection;
+public float highlight;
+public float highlightLighten;
 public LayerConfiguration hoverConfig;
 public GUIStyle labelStyle;
 public LayerConfiguration normalConfig;
+public float pressShift;
+public float toneTextMix;
 public static InspectorStyleData.ButtonStyles CreateDefaultStyles(bool isDarkMode);
 ```
 
+- `accentColor` — Màu tone Accent (nút đang bật / hành động chính).
+- `dangerColor` — Màu tone Danger (hành động nguy hiểm).
+- `accentFaceMix` — Mức pha màu Accent vào mặt nút (0..1).
+- `dangerFaceMix` — Mức pha màu Danger vào mặt nút (0..1).
+- `toneTextMix` — Mức pha màu tone vào chữ của nút có tone (0..1).
+- `accentRing` — Độ dày viền màu Accent khi nút ở tone Accent (px); 0 = không vẽ.
+- `depthDirection` — Hướng bóng đổ của nút (x: sang phải, y: xuống); độ dài bóng là depth, lún theo cùng hướng.
+- `depth` — Độ dày đáy 3D của nút (px); 0 = tắt.
+- `depthDarken` — Đáy nút tối hơn màu mặt nút bao nhiêu (0..1).
+- `highlight` — Độ dày vệt sáng ở đỉnh nút (px); 0 = tắt.
+- `highlightLighten` — Vệt sáng sáng hơn màu mặt nút bao nhiêu (0..1).
+- `pressShift` — Số px mặt nút lún xuống khi giữ chuột (không vượt quá depth).
+- `DefaultAccent` — Màu Accent mặc định.
+- `DefaultDanger` — Màu Danger mặc định.
 - `CreateDefaultStyles` — Tạo bộ button style mặc định cho theme tối hoặc sáng.
 
 #### class `InspectorStyleData.GroupStyles`
@@ -300,15 +377,31 @@ Kích thước, padding và layer config để vẽ group box và header của n
 ```csharp
 public GroupStyles();
 public LayerConfiguration backgroundConfig;
+public float boxDepth;
+public float boxDepthDarken;
 public Padding contentPadding;
+public Vector2 depthDirection;
 public float groupSpacing;
 public LayerConfiguration headerConfig;
+public float headerDepth;
+public float headerDepthDarken;
+public Color headerDivider;
 public float headerHeight;
+public float headerHighlight;
+public float headerHighlightLighten;
 public Padding headerPadding;
 public GUIStyle labelStyle;
 public static InspectorStyleData.GroupStyles CreateDefaultStyles(bool isDarkMode);
 ```
 
+- `headerDivider` — Viền quanh header (cạnh dưới là đường chia với thân box); alpha 0 = không vẽ.
+- `depthDirection` — Hướng bóng đổ của box và header (x: sang phải, y: xuống); độ dài bóng là các trường px.
+- `boxDepth` — Độ dày đáy 3D dưới box (px); 0 = tắt.
+- `boxDepthDarken` — Đáy box tối hơn màu nền box bao nhiêu (0..1).
+- `headerDepth` — Độ dày đáy 3D dưới header (px); 0 = tắt.
+- `headerDepthDarken` — Đáy header tối hơn màu nền header bao nhiêu (0..1).
+- `headerHighlight` — Độ dày vệt sáng ở đỉnh header (px); 0 = tắt.
+- `headerHighlightLighten` — Vệt sáng header sáng hơn màu nền header bao nhiêu (0..1).
 - `CreateDefaultStyles` — Tạo bộ group style mặc định cho theme tối hoặc sáng.
 
 #### class `MonoBehaviorInspector`
@@ -453,4 +546,64 @@ public SubclassSelectorDrawer();
 public virtual float GetPropertyHeight(SerializedProperty property, GUIContent label);
 public virtual void OnGUI(Rect position, SerializedProperty property, GUIContent label);
 ```
+
+#### static class `SwitchGUI`
+
+Công tắc bật/tắt (track bo tròn + núm) theo InspectorStyleData.ButtonStyles hiện hành: bật dùng accentColor, tắt dùng màu mặt nút sáng lên một chút. Click tính khi thả chuột trên công tắc. Ngoài #if VAHTYAH_CUSTOM_INSPECTOR.  
+
+```csharp
+public const float LabelGap;
+public const float TrackHeight;
+public const float TrackWidth;
+public static GUIStyle LabelStyle { get; }
+public static bool Switch(bool value, GUIContent label);
+public static bool Switch(Rect rect, bool value, GUIContent label = null);
+public static float Width(GUIContent label);
+```
+
+- `TrackWidth` — Chiều rộng track (px).
+- `TrackHeight` — Chiều cao track (px).
+- `LabelGap` — Khoảng cách giữa track và nhãn (px).
+- `LabelStyle` — Style nhãn mặc định (mini label).
+- `Width` — Chiều rộng cần cho công tắc kèm nhãn.
+- `Switch` — Công tắc layout kèm nhãn bên phải; trả về giá trị mới.
+
+#### static class `TabGUI`
+
+Box có hàng tab kiểu PanelNavigator (Level Editor) theo InspectorStyleData.GroupStyles hiện hành: tab đang chọn cùng màu nền box, chữ đậm và nối liền xuống thân box; tab khác là nền box mờ, không viền. Tab chia đều chiều ngang (fillWidth) hoặc co theo chữ, xếp từ trái và chừa phần trống bên phải để đặt nút. Ngoài #if VAHTYAH_CUSTOM_INSPECTOR.  
+
+```csharp
+public const float TabGap;
+public const float TabPadding;
+public static float BarHeight { get; }
+public static InspectorStyleData.GroupStyles Styles { get; }
+public static int BeginTabBox(IList<GUIContent> tabs, int selected, bool expandHeight = false);
+public static int BeginTabBox(IList<GUIContent> tabs, int selected, out Rect toolbar, bool fillWidth, float maxTabWidth = 0, bool expandHeight = false);
+public static int Draw(Rect box, IList<GUIContent> tabs, int selected, bool fillWidth = true, float maxTabWidth = 0);
+public static void EndTabBox();
+public static Rect PanelRect(Rect box);
+public static Rect ToolbarRect(Rect box, IList<GUIContent> tabs, bool fillWidth = true, float maxTabWidth = 0);
+```
+
+- `TabGap` — Khoảng cách giữa hai tab (px).
+- `TabPadding` — Lề ngang hai bên chữ khi tab co theo chữ (px).
+- `Styles` — Group style đang dùng, fallback style mặc định theo skin khi chưa có theme.
+- `BarHeight` — Chiều cao hàng tab.
+- `PanelRect` — Phần thân box (dưới hàng tab) của vùng box.
+- `ToolbarRect` — Phần trống bên phải hàng tab (phía trên thân box) để đặt nút; rộng 0 khi tab chia đều hoặc đã chiếm hết.
+- `Draw` — Vẽ hàng tab và nền box trong box (gồm cả hàng tab); trả về index mới khi bấm vào một tab (nhận click ở MouseDown như tab của Unity). fillWidth = false: tab co theo chữ, không rộng quá maxTabWidth (0 = không giới hạn).
+- `BeginTabBox` — Mở box có hàng tab (chia đều chiều ngang) trong layout và vùng nội dung có padding; đóng bằng EndTabBox. Trả về index tab mới.
+- `EndTabBox` — Đóng vùng nội dung và box mở bởi BeginTabBox.
+
+#### class `TabGroupAttribute`
+
+*: GroupAttribute*  
+Groups fields sharing the same id into one tabbed box in the Inspector; each field appears under the tab named by Tab. Tabs are ordered by the first field that uses them.  
+
+```csharp
+public TabGroupAttribute(string id, string tab, int order = 0);
+public string Tab { get; }
+```
+
+- `Tab` — Name of the tab this field is shown under.
 
