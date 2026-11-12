@@ -1,6 +1,6 @@
 # com.vahtyah.inspector — API Reference
 
-> Version 1.1.0. Auto-generated from the compiled public API by `VahTyah → Generate API Docs`. Do not edit by hand — edit the source or `Documentation~/Examples.md` instead.
+> Version 1.1.0. Auto-generated from the compiled public API by `Tools → Export DLLs (Obfuscated)`. Do not edit by hand — edit the source or `Documentation~/Examples.md` instead.
 
 This package ships as obfuscated DLLs. This file documents the full public surface so it can be used without decompiling.
 
@@ -84,6 +84,29 @@ public class Enemy : MonoBehaviour
 
 `RefSource` is `Self | Children | Parent | Scene`.
 
+### Scene references (`SceneRef`)
+
+```csharp
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using VahTyah.Inspector;
+
+public class SceneLauncher : MonoBehaviour
+{
+    public SceneRef target;                // drag a scene asset; stores path + GUID
+
+    public void Load()
+    {
+        if (target.BuildIndex >= 0)        // -1 when missing/disabled in Build Settings
+            SceneManager.LoadSceneAsync(target.Path);
+    }
+}
+```
+
+The drawer repairs the stored path from the GUID when the scene is renamed or moved, and shows a
+warning with an **Add** / **Enable** button when the scene is not (enabled) in Build Settings.
+Use it instead of build indices, which silently shift when scenes are reordered.
+
 ### `[SerializeReference]` polymorphism (`[SubclassSelector]`)
 
 ```csharp
@@ -109,6 +132,87 @@ public class Player : MonoBehaviour
 `[SubclassSelector]` is a real Unity `PropertyDrawer`, so `EditorGUILayout.PropertyField` honors it
 even outside the custom Inspector.
 
+### Interface-typed Unity object references (`[Implements]`)
+
+```csharp
+using UnityEngine;
+using VahTyah.Inspector;
+
+public interface ILevelCatalog { int LevelCount { get; } }
+public interface IDamageable { }
+
+public class LevelModule : ScriptableObject
+{
+    // Unity cannot serialize an interface field, so keep a Unity type and constrain it.
+    [SerializeField, Implements(typeof(ILevelCatalog))]
+    private ScriptableObject catalog;                      // only assets implementing ILevelCatalog
+
+    [SerializeField, Implements(typeof(IDamageable))]
+    private Component target;                              // dropping a GameObject picks the implementing component
+
+    private ILevelCatalog Catalog => catalog as ILevelCatalog;
+}
+```
+
+The field type decides the source (`ScriptableObject` → assets, `Component` → components, `Object` →
+both); the interface is checked on drop, and the button on the right lists only objects that implement
+it (sub-assets included). Use `[SubclassSelector]` instead for plain C# classes. Like
+`[SubclassSelector]`, it is a real `PropertyDrawer` and works outside the custom Inspector.
+
+### Copy / paste component values
+
+No code needed. Every component header gets a copy icon next to Help/Preset:
+
+- Click it to copy that component's values. Click again to discard. You can copy several components.
+- On another object, a component of the same type shows a paste icon instead. Click to paste values;
+  Alt+click pastes and keeps the copy in the clipboard. Multi-selection pastes into all selected objects.
+- Shift+click the paste icon (or right-click → **Paste Selected Values…**) to open the copied component
+  drawn like the Inspector. Fields that differ from the target get a checkbox; identical ones are dimmed.
+  Values can be edited before pasting (edited fields are ticked automatically). Enter pastes, Esc closes.
+- Right-click the icon for the full menu (copy, paste from a specific source, clear clipboard).
+- While the clipboard holds components from other GameObjects, a **Paste Component(s)** button appears
+  under **Add Component**. It adds those components to the inspected GameObjects; copies taken from the
+  inspected GameObject itself are skipped. Press Esc with the mouse over the Inspector (or hover the button
+  and click ✕) to clear the clipboard. Types that allow only one instance
+  (Transform, Rigidbody, `[DisallowMultipleComponent]`…) paste their values into the existing component.
+
+Values are captured at copy time and survive domain reloads and Play/Edit transitions, so values copied
+in Play mode can be pasted in Edit mode. Toggle with `VahTyah/Inspector/Copy ∕ Paste components`.
+
+### Component windows
+
+Alt+drag a component header in the Inspector to pull it out into a floating window (or right-click a
+component → **Open in Window**). The window uses Unity's own inspector for that component, custom editors
+included. Drag its title bar to move, the bottom-right corner to resize; ✕ or Esc closes it. Toggle with
+`VahTyah/Inspector/Create component windows with Alt-Drag`.
+
+### Component hotkeys
+
+Hover a component in the Inspector (header or body) and press a key. The Inspector does not need focus.
+
+| Key | Action |
+|---|---|
+| E | Collapse or expand the hovered component |
+| Shift+E | Expand the hovered component, collapse every other one |
+| Ctrl+Shift+E (Cmd+Shift+E on macOS) | Collapse all components, or expand all if every one is collapsed |
+| A | Enable or disable the hovered component |
+| X | Remove the hovered component (Unity's own Remove Component, with its dependency checks) |
+
+With a multi-selection, A and X apply to every selected object. All changes go through Undo. Keys are
+ignored while a text field is being edited. Toggle with `VahTyah/Inspector/E, Shift-E, Ctrl-Shift-E, A, X on hovered component`.
+
+### Selection history
+
+Go back and forward through what you selected, like a browser:
+
+- Mouse Back / Forward buttons (buttons 4 and 5) over any editor window. The Game view is skipped in Play mode.
+- Ctrl+Alt+← / → (Cmd+Alt on macOS). Rebind under **Edit → Shortcuts → VahTyah → Selection History**.
+
+Empty selections are not recorded, so Back after clicking empty space re-selects the last item. Selecting
+something new while in the middle of the history drops the forward part. Objects in a scene that was closed and
+reopened are found again. The last 50 selections are kept until Unity is closed. Toggle with
+`VahTyah/Inspector/Mouse back ∕ forward for selection history`.
+
 ### Persist tweaks made in Play mode (`PlayModeSaveSystem`)
 
 ```csharp
@@ -120,6 +224,9 @@ PlayModeSaveSystem.SaveComponent(myComponent);
 bool kept = PlayModeSaveSystem.IsSaved(myComponent);
 PlayModeSaveSystem.ClearSavedData(myComponent);
 ```
+
+Values are re-captured when exiting Play mode, so tweaks made after clicking Save are kept too. Arrays,
+`[SerializeReference]` fields, curves and gradients are included.
 
 ## API Reference
 
@@ -271,7 +378,7 @@ public static void DrawGroupBackdrop(Rect box, Rect header, InspectorStyleData.G
 public static bool DrawHeader(Rect box, Rect header, InspectorStyleData.GroupStyles g, float labelPad, string title, bool open, GUIStyle titleStyle);
 ```
 
-- `DrawGroupBackdrop` — Nền box + header band, kèm viền header và các phần 3D (đáy box, đáy / vệt sáng header) theo GroupStyles. Chỉ vẽ ở Repaint nên gọi vô điều kiện. Box đang thu gọn (chỉ còn header) thì không vẽ đáy header.
+- `DrawGroupBackdrop` — Nền box + header band, kèm viền header và các phần 3D (đáy box, đáy / vệt sáng header) theo GroupStyles. Chỉ vẽ ở Repaint nên gọi vô điều kiện. Box đang thu gọn (chỉ còn header) thì không vẽ đáy header. Juice đọc qua reflection (com.vahtyah.juice InspectorLink) — đổi tên/chữ ký phải sửa InspectorLink.
 - `DrawFoldout` — Nút vô hình phủ clickRegion + arrow ▾/▸ + label. Trả về open mới (caller lo persist, ví dụ SessionState). Dùng cho group có widget bên phải header (clickRegion chỉ phủ nửa trái). labelPad là lề trái của label — do consumer truyền (Juice: headerPadding.left + 4f; Module: headerPadding.left).
 - `DrawHeader` — Backdrop + foldout phủ TRỌN header — cho group không có widget bên phải.
 
@@ -294,6 +401,18 @@ public Rect Remaining(Rect header, float leftPad, float gapBefore = 0);
 - `Button` — Cấp một nút: chạy con trỏ sang trái (gapBefore + width) rồi trả Rect cao 1 dòng, canh giữa dọc. Nút đầu tiên thường gapBefore = 0; các nút sau gapBefore = GAP của consumer.
 - `Remaining` — Vùng còn lại bên trái cho label/title: từ header.x + leftPad tới con trỏ hiện tại (trừ gapBefore). Dùng full chiều cao header (label căn theo header, không theo dòng).
 
+#### sealed class `ImplementsAttribute`
+
+*: PropertyAttribute*  
+Đặt lên field kiểu UnityEngine.Object (ScriptableObject, Component, Object...) để chỉ nhận object implement interface cho trước. Unity không serialize field kiểu interface, nên field giữ kiểu Unity còn ràng buộc interface do drawer kiểm: kéo-thả sai type bị từ chối, nút bên phải liệt kê các object hợp lệ. Kiểu của field quyết định nguồn: ScriptableObject chỉ nhận asset, Component nhận component (kéo GameObject vào thì lấy component đầu tiên implement interface), Object nhận cả hai. Class C# thuần dùng [SerializeReference] + [SubclassSelector] thay thế.  
+
+```csharp
+public ImplementsAttribute(Type interfaceType);
+public readonly Type InterfaceType;
+```
+
+- `InterfaceType` — Interface mà object gán vào phải implement.
+
 #### static class `InspectorStyle`
 
 Điểm truy cập tĩnh tới InspectorStyleData hiện hành mà các drawer đọc để vẽ. Nguồn style là InspectorTheme (lưu local trong UserSettings/), không còn asset nào.  
@@ -305,7 +424,7 @@ public static void Refresh();
 ```
 
 - `EnsureStyleDatabaseExists` — Nạp style hiện hành nếu chưa có.
-- `GetStyle` — Trả về InspectorStyleData đang dùng để vẽ inspector.
+- `GetStyle` — Trả về InspectorStyleData đang dùng để vẽ inspector. Juice đọc qua reflection (com.vahtyah.juice InspectorLink) — đổi tên/chữ ký phải sửa InspectorLink.
 - `Refresh` — Đọc lại style hiện hành (vd. sau khi đổi theme); drawer sẽ cập nhật ở repaint kế.
 
 #### class `InspectorStyleData`
@@ -320,6 +439,7 @@ public static InspectorStyleData CreateDefault(bool isDarkMode);
 public static InspectorStyleData CreateForSkin();
 ```
 
+- `groupStyles` — Juice đọc qua reflection (com.vahtyah.juice InspectorLink) — đổi tên/chữ ký phải sửa InspectorLink.
 - `CreateDefault` — Bộ style dựng sẵn cho theme tối hoặc sáng.
 - `CreateForSkin` — Bộ style dựng sẵn khớp skin Editor hiện tại (pro-skin = dark).
 
@@ -372,7 +492,7 @@ public static InspectorStyleData.ButtonStyles CreateDefaultStyles(bool isDarkMod
 
 #### class `InspectorStyleData.GroupStyles`
 
-Kích thước, padding và layer config để vẽ group box và header của nó.  
+Kích thước, padding và layer config để vẽ group box và header của nó. headerHeight, headerPadding, contentPadding, groupSpacing, backgroundConfig, headerConfig, labelStyle: Juice đọc qua reflection (com.vahtyah.juice InspectorLink) — đổi tên/chữ ký phải sửa InspectorLink.  
 
 ```csharp
 public GroupStyles();
@@ -428,7 +548,6 @@ public string MethodName { get; }
 #### class `PlayModeSaveSystem`
 
 *: ScriptableSingleton<PlayModeSaveSystem>*  
-Captures serialized values of selected components during Play mode and re-applies them when returning to Edit mode, so tweaks made while playing are not lost.  
 
 ```csharp
 public PlayModeSaveSystem();
@@ -442,24 +561,6 @@ public static void SaveComponent(Component component);
 - `IsSaved` — Returns whether the component is currently tracked for Play mode save.
 - `ClearSavedData` — Removes any saved data tracked for the given component.
 - `ClearAllSavedData` — Removes all tracked save data for every component.
-
-#### class `PlayModeSaveSystem.ComponentData`
-
-Serialized snapshot of one component's property values and reference identity used to restore it.  
-
-```csharp
-public ComponentData();
-public int componentInstanceId;
-public string componentTypeName;
-public string globalId;
-public string globalIdUnpacked;
-public List<string> objectRefAssetPaths;
-public List<string> objectRefAssetTypes;
-public List<string> objectRefPaths;
-public List<string> propertyPaths;
-public List<int> propertyTypes;
-public List<string> stringValues;
-```
 
 #### class `ReadOnlyAttribute`
 
@@ -497,6 +598,21 @@ public string Message { get; }
 
 - `Message` — Custom message shown when the field is unassigned; a default is used when null.
 - `IsError` — Whether the notice is shown as an error rather than a warning.
+
+#### struct `SceneRef`
+
+Serializable reference to a scene, picked as a SceneAsset in the Inspector instead of a typed build index. Stores the project Path (used at runtime to load; unique, unlike scene names) and the asset GUID (Editor only: repairs the path when the scene is renamed or moved — there is no AssetDatabase at runtime). The drawer warns, with an Add/Enable button, when the scene is missing or disabled in Build Settings.  
+
+```csharp
+public int BuildIndex { get; }
+public bool IsSet { get; }
+public string Name { get; }
+public string Path { get; }
+public virtual string ToString();
+```
+
+- `Path` — Project path, e.g. Assets/Scenes/Game.unity. Empty when unset.
+- `BuildIndex` — Build index at runtime; -1 when the scene is missing or disabled in Build Settings.
 
 #### class `ScriptableObjectInspector`
 
